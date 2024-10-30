@@ -30,11 +30,6 @@ async function presupuesto(precioLista, descuento) {
 }
 
 bot.command('budget', async (ctx) => {
-  if (!ctx.message.text) {
-    ctx.reply('Para obtener costo final, usa el comando /budget seguido del precio de lista y opcionalmente un descuento. Ejemplo: /budget 1000 10');
-    return;
-  }
-
   const text = ctx.message.text.trim();
   const args = text.split(' ').slice(1);
 
@@ -56,13 +51,21 @@ bot.command('budget', async (ctx) => {
 
   const mensaje = `
     Detalle del Presupuesto:
-    - Precio de lista: ${precioLista}
-    - Descuento: ${descuento > 0 ? descuento + '%' : 'No aplica'}
-    - Costo final $USD en Ctes: $${USD}
-    - Costo final $ARS en Ctes: $${ARS}
+    - El precio del dolar blue ahora es: $${await obtenerDolarBlue()}
+    - Con tu precio de lista: $${precioLista}
+    - Y el descuento ofrecido: ${descuento > 0 ? descuento + '%' : 'No aplica'}
+    - Costo final $USD: $${USD}
+    - Costo final $ARS: $${ARS}
   `;
   
   ctx.reply(mensaje);
+});
+
+bot.on('text', (ctx) => {
+  if (ctx.message.text && !ctx.message.text.startsWith('/budget')) {
+    ctx.reply('Para obtener un presupuesto, utiliza el comando /budget seguido del precio de lista y opcionalmente un descuento. Ejemplo: /budget 1000 10');
+  }
+  console.log(`Mensaje del usuario => ${ctx.message.text}`);
 });
 
 bot.launch();
