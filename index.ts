@@ -57,13 +57,6 @@ async function presupuesto(precioLista, descuento) {
 bot.launch();
 console.log("El bot está escuchando mensajes en Telegram...");
 
-// bot.on('text', (ctx) => {
-//   const username = ctx.from.username;
-//   if (ctx.message.text && !ctx.message.text.startsWith('/budget', '/readExcel')) {
-//     ctx.reply('Para obtener un presupuesto, utiliza el comando /budget seguido del precio de lista y opcionalmente un porcentaje de descuento que ofrezca el sitio web. Ejemplo: /budget 1000 10');
-//   }
-//   console.log(`Mensaje de @${username} => ${ctx.message.text}`);
-// });
 
 bot.command('budget', async (ctx) => {
   const username = ctx.from.username;
@@ -97,35 +90,33 @@ bot.command('budget', async (ctx) => {
 });
 
 bot.command('stock', async (ctx) => {
+  const username = ctx.from.username;
+  console.log(`Comando de @${username} => ${ctx.message.text}`);
   const spreadsheetId = '14S2iz9XPbY1qfyUhPOXTERnp2SO8niATQhIHf8XQGQI'; // ID de Google Sheet
-  const range = '🔥STOCK!B1:E100'; // Ajusta según el rango que quieras leer
+  const range = '🔥STOCK!B1:O100'; // Ajusta según el rango que quieras leer
 
   const userInputs = ctx.message.text.trim();
-  const args = userInputs.split(' ');
-  const sizeToFilter = args[1] ? args[1].trim().toUpperCase() : null; // Convertir a mayúsculas y limpiar espacios
+  const args = userInputs.split(' ').slice(1);
+  const sizesToFilter = args.length > 0 ? args.map(size => size.trim()) : null; // Filtra las tallas que se proporcionaron
+
+  if (!sizesToFilter || sizesToFilter.length === 0) {
+    ctx.reply(`⚠️ Debes proporcionar una o más tallas para buscar productos. Ejemplo: /stock 9 10 11`);
+    return;
+  }
 
   try {
     const data = await readGoogleSheet(spreadsheetId, range);
-
-    // Extraer encabezados y datos
-    const headers = data[0]; // Primera fila son los encabezados
     const allData = data.slice(1); // Elimina los encabezados
 
-    // Limpiar datos (por ejemplo, eliminar espacios y convertir todo a mayúsculas para la comparación)
-    const cleanedData = allData.map(row => row.map(cell => (cell ? cell.toString().trim().toUpperCase() : null)));
+    const cleanedData = allData.map(row => row.map(cell => (cell ? cell.toString().trim() : null)));
+    const filteredData = cleanedData.filter(row => row[2] && sizesToFilter.includes(row[2]));
+    const productQuantity = filteredData.length === 1 ? 'Producto encontrado para' : 'Productos encontrados para';
+    const sizesQuantity = sizesToFilter.length === 1 ? 'la talla' : 'las tallas';
 
-    let filteredData;
 
-    if (sizeToFilter) {
-      // Filtrar por talla (columna "D", índice 3)
-      filteredData = cleanedData.filter(row => row[2] && row[2] === sizeToFilter);
-      if (filteredData.length === 0) {
-        ctx.reply(`No se encontraron productos para la talla ${sizeToFilter}.`);
-        return;
-      }
-    } else {
-      // Si no se proporciona talla, mostrar todos los productos
-      filteredData = cleanedData;
+    if (filteredData.length === 0) {
+      ctx.reply(`❌ No se encontraron productos para ${sizesQuantity} ${sizesToFilter.join(', ')}.`);
+      return;
     }
 
     // Formatear los datos para enviar al usuario
@@ -133,16 +124,24 @@ bot.command('stock', async (ctx) => {
       const articulo = row[0] || 'N/A';
       const descripcion = row[1] || 'N/A';
       const sz = row[2] || 'N/A';
-      return `- Artículo: ${articulo}\n  Descripción: ${descripcion}\n  Talla: ${sz}`;
+      const unidad = row[3] || 'N/A';
+      const precioContado = row[11] || 'N/A';
+      const precioTarjeta = row[13] || 'N/A';
+      return `- Artículo: ${articulo}\n  Descripción: ${descripcion}\n  Talla: ${sz} ${unidad}\n  Precio Contado: ${precioContado}\n  Precio Tarjeta: ${precioTarjeta}`;
     }).join('\n\n');
-
-    if (sizeToFilter) {
-      ctx.reply(`Productos encontrados para talla ${sizeToFilter}:\n\n${formattedData}`);
-    } else {
-      ctx.reply(`Todos los productos disponibles:\n\n${formattedData}`);
-    }
+      const response = `✅ ${filteredData.length} ${productQuantity} ${sizesQuantity} ${sizesToFilter.join(', ')}:\n\n${formattedData}`;    
+      ctx.reply(response);
+      console.log(response);
   } catch (err) {
     ctx.reply('Hubo un error al leer el Google Sheet. Verifica los logs para más detalles.');
     console.error('Error leyendo Google Sheet:', err);
   }
+});
+
+bot.on('text', (ctx) => {
+  const username = ctx.from.username;
+  if (ctx.message.text && !ctx.message.text.startsWith('/budget', '/stock')) {
+    ctx.reply(`Para obtener un presupuesto, utiliza el comando /budget seguido del precio de lista y opcionalmente un porcentaje de descuento que ofrezca el sitio web.\n Ejemplo: /budget 1000 10\n\nPara ver el STOCK, utiliza el comando /stock seguido de la talla que deseas filtrar.\n Ejemplo: /stock 12 o /stock M`);
+  }
+  console.log(`Mensaje de @${username} => ${ctx.message.text}`);
 });
