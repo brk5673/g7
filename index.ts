@@ -3,7 +3,6 @@ const { Telegraf } = require('telegraf');
 require('dotenv').config();
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
-console.log('welcome to the g7 bot');
 const bot = new Telegraf(TELEGRAM_BOT_TOKEN);
 const credentials = require('./credentials.json');
 
@@ -53,73 +52,125 @@ async function presupuesto(precioLista, descuento) {
   const totalARS = totalUSD * Number(dolar);
   return { totalUSD, totalARS};
 }
+let awaitingCommand;
+bot.telegram.setMyCommands([
+  { command: 'start', description: 'Iniciar el bot' },
+  { command: 'budget', description: 'Obtener un presupuesto' },
+  { command: 'stock', description: 'Ver el stock de productos' },
+  { command: 'help', description: 'Ver los comandos disponibles y descripcion' }
+]);
+
+bot.command('start', (ctx) => {
+  const username = ctx.from.username;
+  console.log(`Comando de @${username} => ${ctx.message.text}`);
+  ctx.reply('¡Hola! Soy g7 bot, un bot de Telegram, usa /help para ver los comandos disponibles.');
+});
+
+bot.command('help', (ctx) => {
+  const username = ctx.from.username;
+  console.log(`Comando de @${username} => ${ctx.message.text}`);
+  ctx.reply('Comandos disponibles:\n\n' + 
+    '/start - Iniciar el bot\n' +
+    '/budget [precioLista] [descuento] - Obtener un presupuesto\n' +
+    '/stock [talla] - Ver el stock de productos\n'
+    // agregar mas comandos aquí
+  );
+});
 
 bot.launch();
-console.log("El bot está escuchando mensajes en Telegram...");
+console.log("Bienvenido a g7 bot\nEl bot está escuchando mensajes en Telegram");
 
-
-bot.command('budget', async (ctx) => {
+bot.command('budget', (ctx) => {
   const username = ctx.from.username;
+  console.log(`Mensaje de @${username} => ${ctx.message.text}`);
+
   const text = ctx.message.text.trim();
-  const args = text.split(' ').slice(1);  
-  if (args.length < 1 || args.length > 2) {
-    ctx.reply('Uso incorrecto. Usa: /budget <precioLista> [descuento]');
-    return;
-  }
+  const args = text.split(' ').slice(1);
 
-  const precioLista = parseFloat(args[0]); // Primer argumento
-  const descuento = args[1] ? parseFloat(args[1]) : 0; // Segundo argumento (opcional)
+  if (args.length >= 1) {
+    // Si se proporcionan argumentos directamente
+    handleBudget(ctx, args);
+  } else {
+    ctx.reply('Para obtener un PRESUPUESTO, proporciona un precio de lista y un descuento que ofrezca el sitio web (opcional).\nEjemplo: 128 10');
+    awaitingCommand = 'budget';
+  }
+});
+
+bot.command('stock', (ctx) => {
+  const username = ctx.from.username;
+  console.log(`Mensaje de @${username} => ${ctx.message.text}`);
+
+  const text = ctx.message.text.trim().toUpperCase();
+  const args = text.split(' ').slice(1);
+
+  if (args.length >= 1) {
+    // Si se proporcionan argumentos directamente
+    handleStock(ctx, args);
+  } else {
+    ctx.reply('Para conocer los PRODUCTOS EN STOCK, proporciona una o más tallas.\nEjemplo: 9 10.5 M');
+    awaitingCommand = 'stock';
+  }
+});
+
+bot.on('text', async (ctx) => {
+  const username = ctx.from.username;
+  console.log(`Mensaje de @${username} => ${ctx.message.text}`);
+  const text = ctx.message.text.trim().toUpperCase();
+  const args = text.split(' ');
+
+  if (awaitingCommand === 'budget') {
+    awaitingCommand = null;
+    handleBudget(ctx, args);
+  } else if (awaitingCommand === 'stock') {
+    awaitingCommand = null;
+    handleStock(ctx, args);
+  } else {
+    ctx.reply('Usa /help para ver los comandos disponibles y su descripcion.');
+  }
+});
+
+// Función para manejar el presupuesto
+async function handleBudget(ctx, args) {
+  const precioLista = parseFloat(args[0]);
+  const descuento = args[1] ? parseFloat(args[1]) : 0;
+
   if (isNaN(precioLista) || (args[1] && isNaN(descuento))) {
-    ctx.reply('Por favor, proporciona un precio de lista y un descuento válido (si aplica).');
+    ctx.reply('Por favor, proporciona un precio de lista y un descuento válido (si aplica).\nEjemplo: /budget 1000 10');
     return;
   }
 
-  const {totalUSD: USD} = await presupuesto(precioLista, descuento);
-  const {totalARS: ARS} = await presupuesto(precioLista, descuento);
+  const { totalUSD: USD } = await presupuesto(precioLista, descuento);
+  const { totalARS: ARS } = await presupuesto(precioLista, descuento);
+
   const mensaje = `
     Detalle del Presupuesto:
-    - El precio del dolar blue ahora es: $${await obtenerDolarBlue()}
+    - El precio del dólar blue ahora es: $${await obtenerDolarBlue()}
     - Con tu precio de lista: $${precioLista}
     - Y el descuento ofrecido: ${descuento > 0 ? descuento + '%' : 'No aplica'}
     - Costo final $USD: $${USD}
     - Costo final $ARS: $${ARS}
   `;
-  console.log(`Comando de @${username} => ${ctx.message.text}`);
-  console.log(mensaje);
   ctx.reply(mensaje);
-});
+}
 
-bot.command('stock', async (ctx) => {
-  const username = ctx.from.username;
-  console.log(`Comando de @${username} => ${ctx.message.text}`);
-  const spreadsheetId = '14S2iz9XPbY1qfyUhPOXTERnp2SO8niATQhIHf8XQGQI'; // ID de Google Sheet
-  const range = '🔥STOCK!B1:O100'; // Ajusta según el rango que quieras leer
-
-  const userInputs = ctx.message.text.trim();
-  const args = userInputs.split(' ').slice(1);
-  const sizesToFilter = args.length > 0 ? args.map(size => size.trim()) : null; // Filtra las tallas que se proporcionaron
-
-  if (!sizesToFilter || sizesToFilter.length === 0) {
-    ctx.reply(`⚠️ Debes proporcionar una o más tallas para buscar productos. Ejemplo: /stock 9 10 11`);
-    return;
-  }
+// Función para manejar el stock
+async function handleStock(ctx, sizesToFilter) {
+  const spreadsheetId = '14S2iz9XPbY1qfyUhPOXTERnp2SO8niATQhIHf8XQGQI';
+  const range = '🔥STOCK!B1:O100';
 
   try {
     const data = await readGoogleSheet(spreadsheetId, range);
-    const allData = data.slice(1); // Elimina los encabezados
-
+    const allData = data.slice(1);
     const cleanedData = allData.map(row => row.map(cell => (cell ? cell.toString().trim() : null)));
     const filteredData = cleanedData.filter(row => row[2] && sizesToFilter.includes(row[2]));
     const productQuantity = filteredData.length === 1 ? 'Producto encontrado para' : 'Productos encontrados para';
     const sizesQuantity = sizesToFilter.length === 1 ? 'la talla' : 'las tallas';
-
 
     if (filteredData.length === 0) {
       ctx.reply(`❌ No se encontraron productos para ${sizesQuantity} ${sizesToFilter.join(', ')}.`);
       return;
     }
 
-    // Formatear los datos para enviar al usuario
     const formattedData = filteredData.map(row => {
       const articulo = row[0] || 'N/A';
       const descripcion = row[1] || 'N/A';
@@ -129,19 +180,11 @@ bot.command('stock', async (ctx) => {
       const precioTarjeta = row[13] || 'N/A';
       return `- Artículo: ${articulo}\n  Descripción: ${descripcion}\n  Talla: ${sz} ${unidad}\n  Precio Contado: ${precioContado}\n  Precio Tarjeta: ${precioTarjeta}`;
     }).join('\n\n');
-      const response = `✅ ${filteredData.length} ${productQuantity} ${sizesQuantity} ${sizesToFilter.join(', ')}:\n\n${formattedData}`;    
-      ctx.reply(response);
-      console.log(response);
+
+    const response = `✅ ${filteredData.length} ${productQuantity} ${sizesQuantity} ${sizesToFilter.join(', ')}:\n\n${formattedData}`;
+    ctx.reply(response);
   } catch (err) {
     ctx.reply('Hubo un error al leer el Google Sheet. Verifica los logs para más detalles.');
     console.error('Error leyendo Google Sheet:', err);
   }
-});
-
-bot.on('text', (ctx) => {
-  const username = ctx.from.username;
-  if (ctx.message.text && !ctx.message.text.startsWith('/budget', '/stock')) {
-    ctx.reply(`Para obtener un presupuesto, utiliza el comando /budget seguido del precio de lista y opcionalmente un porcentaje de descuento que ofrezca el sitio web.\n Ejemplo: /budget 1000 10\n\nPara ver el STOCK, utiliza el comando /stock seguido de la talla que deseas filtrar.\n Ejemplo: /stock 12 o /stock M`);
-  }
-  console.log(`Mensaje de @${username} => ${ctx.message.text}`);
-});
+}
