@@ -4,26 +4,10 @@ import { google } from 'googleapis';
 const credentials = require('./credentials.json');
 const auth = new google.auth.GoogleAuth({
   credentials,
-  scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+  scopes: ['https://www.googleapis.com/auth/spreadsheets'],
 })
 
-export async function readGoogleSheet(spreadsheetId: any, range: any) {
-  try {
-    const client = await auth.getClient();
-    const sheets = google.sheets({ version: 'v4', auth: client as any });
-
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId, // ID del archivo GSheet
-      range, // Rango a leer, por ejemplo: "Hoja1!A1:D10"
-    });
-
-    return response.data.values; // Devuelve los datos como un array de arrays
-  } catch (err) {
-    console.error('Error leyendo Google Sheet:', err);
-    throw err;
-  }
-}
-  
+//--------SIMPLE FUNCTIONS--------
 export async function obtenerDolarBlue() {
   try {
     const response = await fetch('https://api.bluelytics.com.ar/v2/latest');
@@ -48,6 +32,48 @@ export async function presupuesto(precioLista: any, descuento: any) {
   return { totalUSD, totalARS};
 }
 
+//--------GOOGLE SHEETS FUNCTIONS--------
+export async function readGoogleSheet(spreadsheetId: any, range: any) {
+  try {
+    const client = await auth.getClient();
+    const sheets = google.sheets({ version: 'v4', auth: client as any });
+
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId, // ID del archivo GSheet
+      range, // Rango a leer, por ejemplo: "Hoja1!A1:D10"
+    });
+
+    return response.data.values; // Devuelve los datos como un array de arrays
+  } catch (err) {
+    console.error('Error leyendo Google Sheet:', err);
+    throw err;
+  }
+}
+
+export async function writeGoogleSheet(spreadsheetId: string, range: string, values: any[]) {
+  try {
+    const client = await auth.getClient();
+    const sheets = google.sheets({ version: 'v4', auth: client as any });
+
+    const request = {
+      spreadsheetId, // ID del archivo GSheet
+      range, // Rango donde escribir, por ejemplo: "Hoja1!A1"
+      valueInputOption: 'RAW', // RAW para datos sin formato
+      resource: {
+        values: [values], // Array con los valores a escribir
+      },
+    };
+
+    const response = await sheets.spreadsheets.values.update(request);
+    console.log(`Celdas actualizadas: ${response.data.updatedCells}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error escribiendo en Google Sheet:', error);
+    throw new Error('No se pudo escribir en el Google Sheet.');
+  }
+}
+
+//--------HANDLES FUNCTIONS--------
 export async function handleBudget(ctx: any, args: any) {
   const precioLista = parseFloat(args[0]);
   const descuento = args[1] ? parseFloat(args[1]) : 0;
@@ -103,5 +129,42 @@ export async function handleStock(ctx: any, sizesToFilter: any) {
   } catch (err) {
     ctx.reply('Hubo un error al leer el Google Sheet. Verifica los logs para más detalles.');
     console.error('Error leyendo Google Sheet:', err);
+  }
+}
+
+export async function handleMarkAsSold(ctx: any, articleNumber: string[]) {
+  const spreadsheetId = '14S2iz9XPbY1qfyUhPOXTERnp2SO8niATQhIHf8XQGQI';
+  const range = 'compras seguimiento!A1:B555';
+  console.log('articleNumber:', articleNumber[0]);
+
+  try {
+    const data: any[][] | null | undefined = await readGoogleSheet(spreadsheetId, range);
+    if (!data || data.length === 0 ) {
+      ctx.reply('❌ No se encontraron datos en la hoja de cálculo.');
+      return;
+    }
+
+    const rowIndex = data.findIndex(row => row[1] && row[1].toString().trim() === articleNumber[0]);
+    console.log('rowIndex:', rowIndex);
+    
+    if (rowIndex === -1) {
+      ctx.reply(`❌ No se encontró el artículo con el número: ${articleNumber[0]}.`);
+      return;
+    }
+    // Rango de la celda en la columna A de esa fila
+    const writeRange = `compras seguimiento!A${rowIndex + 1}`;
+    console.log(writeRange);
+    const cellValue = data[rowIndex][0];
+    console.log(`valor de la celda en columna A: ${cellValue}`);
+   // if cellvalue is empty, then write the value
+    if (!cellValue) {
+      await writeGoogleSheet(spreadsheetId, writeRange, ['☑️']);
+      ctx.reply(`✅ Artículo ${articleNumber[0]} marcado como "vendido".`);
+    } else {
+      ctx.reply(`⚠️ El artículo ${articleNumber[0]} ya tiene un estado asignado y es "${cellValue}".`);
+    }
+  } catch (error) {
+    console.error('Error marcando como vendido:', error);
+    ctx.reply('⚠️ Hubo un error al intentar marcar el artículo como vendido. Por favor, verifica los logs para más detalles.');
   }
 }
