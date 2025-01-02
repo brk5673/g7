@@ -5,7 +5,6 @@ require('dotenv').config();
 const TELEGRAM_BOT_TOKEN : string | undefined = process.env.TELEGRAM_BOT_TOKEN!;
 const bot = new Telegraf(TELEGRAM_BOT_TOKEN);
 
-
 let awaitingCommand : any;
 bot.telegram.setMyCommands([
   { command: 'start', description: 'Iniciar el bot' },
@@ -28,7 +27,7 @@ console.log("Welcome to G7's bot on Telegram!");
 
 bot.command('budget', (ctx) => {
   const username = ctx.from.username;
-  console.log(`Mensaje de @${username} => ${ctx.message.text}`);
+  console.log(`@${username} quiere obtener un PRESUPUESTO`);
 
   const text = ctx.message.text.trim();
   const args = text.split(' ').slice(1);
@@ -43,7 +42,7 @@ bot.command('budget', (ctx) => {
 
 bot.command('stock', (ctx) => {
   const username = ctx.from.username;
-  console.log(`Mensaje de @${username} => ${ctx.message.text}`);
+  console.log(`@${username} quiere consultar el STOCK`);
 
   const text = ctx.message.text.trim().toUpperCase();
   const args = text.split(' ').slice(1);
@@ -59,16 +58,20 @@ bot.command('stock', (ctx) => {
 bot.command('sold', (ctx) => {
   const username = ctx.from.username;
   console.log(`@${username} quiere registrar una VENTA`);
-  
-  const text = ctx.message.text.trim();
-  const args = text.split(' ').slice(1);
 
-  if (args.length >= 1) {
-    // const articleNumber = args[0];
-    handleMarkAsSold(ctx, args);
+  if (username !== 'jossefc') {
+    ctx.reply('No tienes permisos para usar este comando.');
+    return;
   } else {
-    ctx.reply('Para registrar un producto como VENDIDO, proporciona el número de artículo.\nEjemplo: /sold 245');
-    awaitingCommand = 'sold';
+    const text = ctx.message.text.trim();
+    const args = text.split(' ').slice(1);
+
+    if (args.length >= 1) {
+      handleMarkAsSold(ctx, args);
+    } else {
+      ctx.reply('Para registrar un producto como VENDIDO, proporciona el número de artículo.\nEjemplo: 245');
+      awaitingCommand = 'sold';
+    }
   }
 });
 
@@ -86,7 +89,7 @@ bot.on('text', async (ctx) => {
     handleStock(ctx, args);
   } else if (awaitingCommand === 'sold') {
     awaitingCommand = null;
-    ctx.reply('Para marcar un producto como VENDIDO, proporciona el comando /sold seguido del número de artículo.\nEjemplo: /sold 245');
+    handleMarkAsSold(ctx, args);
   } else {
     ctx.reply('Hola! Usa /start para comenzar.');
   }

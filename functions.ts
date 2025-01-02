@@ -1,6 +1,7 @@
 
-const fetch = require('node-fetch');
 import { google } from 'googleapis';
+import { Telegraf } from "telegraf";
+const fetch = require('node-fetch');
 const credentials = require('./credentials.json');
 const auth = new google.auth.GoogleAuth({
   credentials,
@@ -134,7 +135,7 @@ export async function handleStock(ctx: any, sizesToFilter: any) {
 
 export async function handleMarkAsSold(ctx: any, articleNumber: string[]) {
   const spreadsheetId = '14S2iz9XPbY1qfyUhPOXTERnp2SO8niATQhIHf8XQGQI';
-  const range = 'compras seguimiento!A1:B555';
+  const range = 'compras seguimiento!A1:E555';
   console.log('articleNumber:', articleNumber[0]);
 
   try {
@@ -145,21 +146,28 @@ export async function handleMarkAsSold(ctx: any, articleNumber: string[]) {
     }
 
     const rowIndex = data.findIndex(row => row[1] && row[1].toString().trim() === articleNumber[0]);
-    console.log('rowIndex:', rowIndex);
+    console.log('rowIndex:', rowIndex + 1); // +1 para que coincida con el número de fila en Google Sheets
     
     if (rowIndex === -1) {
       ctx.reply(`❌ No se encontró el artículo con el número: ${articleNumber[0]}.`);
       return;
     }
-    // Rango de la celda en la columna A de esa fila
-    const writeRange = `compras seguimiento!A${rowIndex + 1}`;
-    console.log(writeRange);
+
+    const productName = data[rowIndex][2] || 'Sin nombre';
+    const productSize = data[rowIndex][3] + data[rowIndex][4] || 'Sin talla';
+    const cellToWrite = `compras seguimiento!A${rowIndex + 1}`;
+    console.log(`celda a escribir ${cellToWrite}`);
+
     const cellValue = data[rowIndex][0];
     console.log(`valor de la celda en columna A: ${cellValue}`);
-   // if cellvalue is empty, then write the value
     if (!cellValue) {
-      await writeGoogleSheet(spreadsheetId, writeRange, ['☑️']);
-      ctx.reply(`✅ Artículo ${articleNumber[0]} marcado como "vendido".`);
+      try {
+        await writeGoogleSheet(spreadsheetId, cellToWrite, ['☑️']);
+        ctx.reply(`✅ Artículo ${articleNumber} ${productName}${productSize} marcado como "vendido".`);
+      } catch (error) {
+        console.error('Error marcando como vendido:', error);
+        ctx.reply('⚠️ Hubo un error al intentar marcar el artículo como vendido. Por favor, verifica los logs para más detalles.');
+      }
     } else {
       ctx.reply(`⚠️ El artículo ${articleNumber[0]} ya tiene un estado asignado y es "${cellValue}".`);
     }
