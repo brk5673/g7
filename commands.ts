@@ -75,7 +75,7 @@ export const setupCommands = (bot: Telegraf) => {
     const userStatesData = userStates.get(userId);
     console.log(`Mensaje de @${username} => ${ctx.message.text}`);
 
-    if (userStatesData) {
+      if (userStatesData) {
       const userResponse = ctx.message.text.trim().toString();
       const buyerCell = `compras seguimiento!AL${userStatesData.rowIndex + 1}`;
       const priceCell = `compras seguimiento!AM${userStatesData.rowIndex + 1}`;
