@@ -6,6 +6,8 @@ const auth = new google.auth.GoogleAuth({
   credentials,
   scopes: ['https://www.googleapis.com/auth/spreadsheets'],
 })
+const spreadsheetId = credentials.spreadsheet_id;
+
 export const userStates = new Map<string, { step: string; articleNumber: string; rowIndex: number; productName: string; buyerName: string }>();
 
 //--------SIMPLE FUNCTIONS--------
@@ -99,7 +101,6 @@ export async function handleBudget(ctx: any, args: any) {
 }
 
 export async function handleStock(ctx: any, sizesToFilter: any) {
-  const spreadsheetId = '14S2iz9XPbY1qfyUhPOXTERnp2SO8niATQhIHf8XQGQI';
   const range = '🔥STOCK!B1:O100';
 
   try {
@@ -134,7 +135,6 @@ export async function handleStock(ctx: any, sizesToFilter: any) {
 }
 
 export async function handleMarkAsSold(ctx: any, articleNumber: string[]) {
-  const spreadsheetId = '14S2iz9XPbY1qfyUhPOXTERnp2SO8niATQhIHf8XQGQI';
   const range = 'compras seguimiento!A1:E555';
   console.log('articleNumber:', articleNumber[0]);
 

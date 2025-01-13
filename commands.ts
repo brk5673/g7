@@ -2,6 +2,8 @@
 import { Telegraf } from "telegraf";
 import { handleBudget, handleStock, handleMarkAsSold, writeGoogleSheet, userStates } from "./functions";
 require('dotenv').config();
+const credentials = require('./credentials.json');
+const spreadsheetId = credentials.spreadsheet_id;
 
 export const setupCommands = (bot: Telegraf) => {
 
@@ -69,14 +71,12 @@ export const setupCommands = (bot: Telegraf) => {
 
   bot.on('text', async (ctx) => {
     const username = ctx.from.username;
-    console.log(`Mensaje de @${username} => ${ctx.message.text}`);
-
     const userId = ctx.from.id.toString();
     const userStatesData = userStates.get(userId);
+    console.log(`Mensaje de @${username} => ${ctx.message.text}`);
 
     if (userStatesData) {
       const userResponse = ctx.message.text.trim().toString();
-      const spreadsheetId = '14S2iz9XPbY1qfyUhPOXTERnp2SO8niATQhIHf8XQGQI';
       const buyerCell = `compras seguimiento!AL${userStatesData.rowIndex + 1}`;
       const priceCell = `compras seguimiento!AM${userStatesData.rowIndex + 1}`;
 
