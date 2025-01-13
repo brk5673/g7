@@ -1,4 +1,47 @@
-- npm i 
-- node index.js
+G7 Telegram Bot
 
-- npm run on
+Description
+
+The G7 Telegram Bot is a feature-rich bot developed using Telegraf. It provides functionalities to handle budgets, stock management, and interaction with Google Sheets for data storage and updates. The bot is built with TypeScript and integrates APIs like Google Sheets and third-party libraries like dotenv for configuration management.
+
+Features
+	•	Budget Calculation: Calculate and display budget details based on price and discounts.
+	•	Stock Management: Query product stock based on size parameters.
+	•	Mark as Sold: Mark items as sold in a connected Google Sheet, with additional data inputs like buyer name and sale price.
+	•	Google Sheets Integration: Read and write operations directly from and to Google Sheets.
+	•	Custom Commands: The bot provides a set of commands to interact with its functionalities.
+
+  Prerequisites
+
+Ensure you have the following installed:
+	•	Node.js (>=16.0.0)
+	•	npm (comes with Node.js)
+	•	Google Cloud API: A service account key file (credentials.json) with permissions to access Google Sheets.
+
+
+  Commands
+	•	/start: Initializes the bot and displays usage instructions.
+	•	/budget <price> <discount>: Calculate the total cost based on the price and an optional discount.
+	•	/stock <size>: Check available stock for a specific size or multiple sizes.
+	•	/sold <item_number>: Mark an item as sold in the Google Sheet and ask for buyer details and sale price.
+
+
+Dependencies
+
+This project uses the following libraries:
+	•	dotenv: For loading environment variables.
+	•	googleapis: To interact with Google Sheets.
+	•	node-fetch: For HTTP requests.
+	•	telegraf: Telegram bot framework.
+	•	xlsx: For Excel file handling.
+
+Dev Dependencies
+	•	typescript: For TypeScript support.
+	•	ts-node: For running TypeScript files directly.
+	•	@types/node: Node.js type definitions.
+
+
+Google Sheets Setup
+	1.	Create a new Google Sheet or use an existing one.
+	2.	Share the sheet with the service account email from the credentials.json file.
+	3.	Note the spreadsheet ID (part of the URL).
