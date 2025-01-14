@@ -16,7 +16,7 @@ Features
 Ensure you have the following installed:
 	•	Node.js (>=16.0.0)
 	•	npm (comes with Node.js)
-	•	Google Cloud API: A service account key file (credentials.json) with permissions to access Google Sheets.
+	•	Google Cloud API: A service account key file (.env) with permissions to access Google Sheets.
 
 
   Commands
@@ -43,5 +43,5 @@ Dev Dependencies
 
 Google Sheets Setup
 	1.	Create a new Google Sheet or use an existing one.
-	2.	Share the sheet with the service account email from the credentials.json file.
+	2.	Share the sheet with the service account email from the .env file.
 	3.	Note the spreadsheet ID (part of the URL).
