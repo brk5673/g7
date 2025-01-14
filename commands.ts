@@ -2,8 +2,7 @@
 import { Telegraf } from "telegraf";
 import { handleBudget, handleStock, handleMarkAsSold, writeGoogleSheet, userStates } from "./functions";
 require('dotenv').config();
-const credentials = require('./credentials.json');
-const spreadsheetId = credentials.spreadsheet_id;
+const spreadsheetId = process.env.SPREADSHEET_ID!;
 
 export const setupCommands = (bot: Telegraf) => {
 

@@ -1,12 +1,19 @@
 
 import { google } from 'googleapis';
+require('dotenv').config();
 const fetch = require('node-fetch');
-const credentials = require('./credentials.json');
 const auth = new google.auth.GoogleAuth({
-  credentials,
+  credentials: {
+    type: process.env.GOOGLE_TYPE,
+    project_id: process.env.GOOGLE_PROJECT_ID,
+    private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
+    private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    client_id: process.env.GOOGLE_CLIENT_ID,
+  },
   scopes: ['https://www.googleapis.com/auth/spreadsheets'],
 })
-const spreadsheetId = credentials.spreadsheet_id;
+const spreadsheetId = process.env.SPREADSHEET_ID!;
 
 export const userStates = new Map<string, { step: string; articleNumber: string; rowIndex: number; productName: string; buyerName: string }>();
 
