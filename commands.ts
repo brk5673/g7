@@ -5,16 +5,14 @@ require('dotenv').config();
 const spreadsheetId = process.env.SPREADSHEET_ID!;
 
 export const setupCommands = (bot: Telegraf) => {
-
-  let awaitingCommand : any;
-
   bot.command('start', (ctx) => {
     const username = ctx.from.username;
     console.log(`Comando de @${username} => ${ctx.message.text}`);
     ctx.reply('¡Hola!\nSoy el bot de G7, creado para obtener presupuesto y consultar stock.\n\n' +
       'Usa:\n' +
-      '/budget <precioLista> <descuento> - Obtener un presupuesto\n' +
-      '/stock <talla> - Ver el stock de productos\n'
+      '/budget <precioLista> *<descuento>*\nObtener un presupuesto\n\n' +
+      '/stock <talla>\nProductos en stock\n\n' +
+      '*Opcional'
     );
   });
 
@@ -28,8 +26,7 @@ export const setupCommands = (bot: Telegraf) => {
     if (args.length >= 1) {
       handleBudget(ctx, args);
     } else {
-      ctx.reply('Para obtener un PRESUPUESTO, proporciona un precio de lista del producto (en dolares) y un descuento que ofrezca el sitio web (en porcentaje - si corresponde).\nEjemplo: 128 10');
-      awaitingCommand = 'budget';
+      ctx.reply('Para obtener un PRESUPUESTO, proporciona el comando /budget + un precio de lista del producto (en dolares) + un descuento que ofrezca el sitio web (si corresponde).\nEjemplo: /budget 128 10');
     }
   });
 
@@ -43,8 +40,7 @@ export const setupCommands = (bot: Telegraf) => {
     if (args.length >= 1) {
       handleStock(ctx, args);
     } else {
-      ctx.reply('Para conocer los PRODUCTOS EN STOCK, proporciona una o más tallas.\nEjemplo: 9 10.5 M');
-      awaitingCommand = 'stock';
+      ctx.reply('Para conocer los PRODUCTOS EN STOCK, proporciona el comando /stock + una o más tallas.\nEjemplo: /stock 9 10.5 M');
     }
   });
 
@@ -61,10 +57,8 @@ export const setupCommands = (bot: Telegraf) => {
       if (args.length >= 1) {
         handleMarkAsSold(ctx, args);
       } else {
-        ctx.reply('Para registrar un producto como VENDIDO, proporciona el número de artículo.\nEjemplo: 245');
-        awaitingCommand = 'sold';
+        ctx.reply('Para registrar un producto como VENDIDO, proporciona el comando /sold + número de artículo.\nEjemplo: /sold 245');
       }
-      
     }
   });
 
@@ -74,7 +68,7 @@ export const setupCommands = (bot: Telegraf) => {
     const userStatesData = userStates.get(userId);
     console.log(`Mensaje de @${username} => ${ctx.message.text}`);
 
-      if (userStatesData) {
+    if (userStatesData) {
       const userResponse = ctx.message.text.trim().toString();
       const buyerCell = `compras seguimiento!AL${userStatesData.rowIndex + 1}`;
       const priceCell = `compras seguimiento!AM${userStatesData.rowIndex + 1}`;
@@ -109,9 +103,9 @@ export const setupCommands = (bot: Telegraf) => {
           console.error('Error escribiendo precio de venta:', error);
           ctx.reply('⚠️ Hubo un error al intentar guardar el precio de venta.');
         }
+        return;
       }
-      return;
+      ctx.reply('Hola! Usa /start para comenzar.');
     }
-    ctx.reply('Hola! Usa /start para comenzar.');
   });
 }

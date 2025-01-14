@@ -11,6 +11,4 @@ console.log("Welcome to G7's bot on Telegram!");
 
 bot.telegram.setMyCommands([
   { command: 'start', description: 'Iniciar el bot' },
-  { command: 'budget', description: 'Obtener un presupuesto' },
-  { command: 'stock', description: 'Ver el stock de productos' },
 ]);
