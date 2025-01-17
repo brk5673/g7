@@ -16,7 +16,9 @@
     "typescript": "^5.7.2"
   },
   "dependencies": {
+    "@types/express": "^5.0.0",
     "dotenv": "^16.4.5",
+    "express": "^4.21.2",
     "googleapis": "^144.0.0",
     "node-fetch": "^2.7.0",
     "telegraf": "^4.16.3",
