@@ -1,13 +1,23 @@
 {
   "compilerOptions": {
-    "target": "ES6",                 // Transpila a ES6
-    "module": "CommonJS",            // Usa el sistema de módulos CommonJS
-    "outDir": "./dist",              // Salida de archivos compilados
-    "strict": true,                  // Activa comprobaciones estrictas
-    "esModuleInterop": true,         // Interoperabilidad con módulos ES
-    "skipLibCheck": true,            // Omite la comprobación de tipos de las librerías
-    "moduleResolution": "node"       // Resolución de módulos compatible con Node.js
+    "target": "ES6",
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],     // Resolución de módulos compatible con Node.js
   },
-  "include": ["**/*.ts"],            // Incluye todos los archivos .ts en el proyecto
+  "include": ["**/*.ts", "ai.ts"],            // Incluye todos los archivos .ts en el proyecto
   "exclude": ["node_modules"]        // Excluye la carpeta node_modules
 }
